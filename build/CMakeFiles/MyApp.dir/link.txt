@@ -1,0 +1,1 @@
+/usr/bin/clang++ -g -Xlinker --dependency-file=CMakeFiles/MyApp.dir/link.d CMakeFiles/MyApp.dir/source/main.cpp.o -o MyApp  -Wl,-rpath,/home/garret_stories/Programs/controller_input/sdl_projects/gyro_reader/build libimu_reader.so.0.1 /usr/lib/libSDL3.so.0.2.26
