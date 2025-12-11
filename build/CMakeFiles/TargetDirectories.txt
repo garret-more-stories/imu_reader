@@ -1,4 +1,0 @@
-/home/garret_stories/Programs/controller_input/sdl_projects/gyro_reader/build/CMakeFiles/ImuReader.dir
-/home/garret_stories/Programs/controller_input/sdl_projects/gyro_reader/build/CMakeFiles/MyApp.dir
-/home/garret_stories/Programs/controller_input/sdl_projects/gyro_reader/build/CMakeFiles/edit_cache.dir
-/home/garret_stories/Programs/controller_input/sdl_projects/gyro_reader/build/CMakeFiles/rebuild_cache.dir

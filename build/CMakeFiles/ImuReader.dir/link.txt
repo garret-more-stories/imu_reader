@@ -1,1 +1,0 @@
-/usr/bin/clang++ -fPIC -g -shared -Xlinker --dependency-file=CMakeFiles/ImuReader.dir/link.d -Wl,-soname,libimu_reader.so.0.1 -o libimu_reader.so.0.1 CMakeFiles/ImuReader.dir/source/GyroReader.cpp.o CMakeFiles/ImuReader.dir/source/main.cpp.o  /usr/lib/libSDL3.so.0.2.26
