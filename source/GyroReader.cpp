@@ -99,6 +99,7 @@ namespace imuReader
     }
 } 
 
+#pragma region Extern C methods
 
 void change_polling_rate(float polling_rate)
 {
@@ -142,4 +143,6 @@ void start_sdl_loop()
         SDL_Quit();
     });
 }  
+
+#pragma endregion
  

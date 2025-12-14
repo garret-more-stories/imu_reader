@@ -20,7 +20,7 @@ target_include_directories(ImuReader PUBLIC
 )
 
 
-target_link_libraries(ImuReader PUBLIC SDL3::SDL3)
+target_link_libraries(ImuReader PRIVATE SDL3::SDL3)
 
 if(WIN32)
     target_compile_definitions(ImuReader PRIVATE MYLIB_EXPORTS)
@@ -32,6 +32,36 @@ target_link_libraries(MyApp PRIVATE ImuReader)
 
 set_target_properties(ImuReader PROPERTIES
     OUTPUT_NAME "imu_reader"
-    VERSION 0.1
-    SOVERSION 0.1
 )
+
+if(APPLE)
+    set_target_properties(ImuReader PROPERTIES
+        BUILD_RPATH "@loader_path"
+        INSTALL_RPATH "@loader_path"
+    )
+elseif(UNIX)
+    set_target_properties(ImuReader PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN"
+    )
+endif()
+
+if(WIN32)
+    add_custom_command(
+        TARGET ImuReader POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy
+        $<TARGET_FILE:SDL3::SDL3-shared>
+        $<TARGET_FILE_DIR:ImuReader>
+        VERBATIM
+    )
+else()
+    add_custom_command(
+        TARGET ImuReader POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy
+        $<TARGET_SONAME_FILE:SDL3::SDL3-shared>
+        $<TARGET_FILE_DIR:ImuReader>
+        VERBATIM
+    )
+endif()
+
+
