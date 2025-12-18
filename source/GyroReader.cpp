@@ -8,10 +8,11 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <cstdint>
 
 namespace imuReader
 {
-    static std::unordered_set<u_int16_t> ignored_vendor_ids = 
+    static std::unordered_set<uint16_t> ignored_vendor_ids = 
     {
         0x28DE
     };
