@@ -14,7 +14,7 @@ namespace imuReader
 {
     static std::unordered_set<uint16_t> ignored_vendor_ids = 
     {
-        0x28DE
+        0x28DE // Steam Deck
     };
 
     static std::thread        sdl_thread;
@@ -68,7 +68,10 @@ namespace imuReader
                     auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gsensor.which);
                     if(iterator != controller_ids.end())
                     {
-                        callback(std::distance(controller_ids.begin(), iterator), event.gsensor.data[0], event.gsensor.data[1], event.gsensor.data[2]); ;
+                        callback(static_cast<int>(std::distance(controller_ids.begin(), iterator)), 
+                                 event.gsensor.data[0], 
+                                 event.gsensor.data[1], 
+                                 event.gsensor.data[2]);
                     }
 
                 }
@@ -80,11 +83,10 @@ namespace imuReader
                 std::lock_guard<std::mutex> guard(controller_mutex);
 
                 auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gdevice.which);
-                // If this condition is met then it most likely an invalid gamepad being removed so it doesn't affect our structure
+                // If this condition is not met then it most likely an invalid gamepad being removed so it doesn't affect our structure
                 if(iterator != controller_ids.end() && *iterator == event.gdevice.which)
-                {
                     controller_ids.erase(iterator);
-                }
+
                 break;
               }
 
@@ -119,7 +121,7 @@ void register_accel_callback(ControllerSensorCallback callback)
 
 void stop_sdl_loop() 
 {
-    imuReader::running = false;   
+    imuReader::running.store(false, std::memory_order_relaxed);   
     if (imuReader::sdl_thread.joinable())
     {
         imuReader::sdl_thread.join();  
@@ -129,21 +131,27 @@ void stop_sdl_loop()
 void start_sdl_loop()
 {
     stop_sdl_loop();
-    
-    imuReader::running    = true;   
+            
+    imuReader::controller_ids.clear();
+    imuReader::running.store(true, std::memory_order_relaxed);   
+
     imuReader::sdl_thread = std::thread([]() 
     {
         SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_SENSOR); 
-        while (imuReader::running) 
+        while (imuReader::running.load(std::memory_order_relaxed)) 
         {
             imuReader::run_sdl_loop();
             std::this_thread::sleep_for(std::chrono::milliseconds(imuReader::poll_delay_ms));
         } 
-        
-        imuReader::controller_ids.clear();
+
         SDL_Quit();
     });
 }  
+
+int return_number_two()
+{
+    return 2;
+}
 
 #pragma endregion
  
