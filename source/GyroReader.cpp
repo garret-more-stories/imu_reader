@@ -26,6 +26,7 @@ namespace imuReader
 
     // Might change this to a direct index look up structure with 2 arrays to optimize finding the ids
     static std::vector<SDL_JoystickID>            controller_ids;
+    
     void add_gamepad(SDL_JoystickID id)
     {
         // Controller must function properly in Unity for it to be added to the list
@@ -85,7 +86,11 @@ namespace imuReader
                 auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gdevice.which);
                 // If this condition is not met then it most likely an invalid gamepad being removed so it doesn't affect our structure
                 if(iterator != controller_ids.end() && *iterator == event.gdevice.which)
+                {
                     controller_ids.erase(iterator);
+                    SDL_CloseGamepad(SDL_GetGamepadFromID(event.gdevice.which));
+                }
+                   
 
                 break;
               }
@@ -117,6 +122,19 @@ void register_gyro_callback(ControllerSensorCallback callback)
 void register_accel_callback(ControllerSensorCallback callback)
 {
     imuReader::accel_callback.store(callback, std::memory_order_release);
+}
+
+bool set_controller_imu_state (int controller_index, bool is_enabled)
+{
+    std::lock_guard<std::mutex> guard(imuReader::controller_mutex);
+
+    auto gamepad_id = SDL_GetGamepadFromID(imuReader::controller_ids[controller_index]);
+
+    return gamepad_id && 
+           SDL_GamepadHasSensor        (gamepad_id, SDL_SENSOR_GYRO ) &&  
+           SDL_GamepadHasSensor        (gamepad_id, SDL_SENSOR_ACCEL) && 
+           SDL_SetGamepadSensorEnabled (gamepad_id, SDL_SENSOR_GYRO , is_enabled) && 
+           SDL_SetGamepadSensorEnabled (gamepad_id, SDL_SENSOR_ACCEL, is_enabled) ;
 }
 
 void stop_sdl_loop() 
