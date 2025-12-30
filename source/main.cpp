@@ -6,7 +6,7 @@
 
 void notify_gyro(int controller, float x, float y, float z)
 {
-    printf("Gyro from controller %i: %f, %f, %f\n",controller, x, y, z);
+    printf("Gyro  from controller %i: %f, %f, %f\n",controller, x, y, z);
 }
 
 void notify_accel(int controller, float x, float y, float z)

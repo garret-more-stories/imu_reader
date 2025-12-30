@@ -48,22 +48,18 @@ endif()
 add_executable(MyApp source/main.cpp)
 target_link_libraries(MyApp PRIVATE ImuReader)
 
+
 set_target_properties(ImuReader PROPERTIES
     OUTPUT_NAME "imu_reader"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/$<CONFIG>"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/$<CONFIG>"
 )
 
-if (WIN32)
-    set_target_properties(ImuReader PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/$<CONFIG>"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/$<CONFIG>"
-    )
+set_target_properties(MyApp PROPERTIES
+RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/MyApp")
 
-    set_target_properties(MyApp PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/MyApp"
-)
-
-elseif(APPLE)
+if(APPLE)
     set_target_properties(ImuReader PROPERTIES
         BUILD_RPATH "@loader_path"
         INSTALL_RPATH "@loader_path"

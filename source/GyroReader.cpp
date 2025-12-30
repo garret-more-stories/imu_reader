@@ -53,55 +53,57 @@ namespace imuReader
             do
             {
                 switch (event.type) 
-                {     
-                  case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
-                  {
-                    ControllerSensorCallback callback;
-                    switch (event.gsensor.sensor) 
+                {
+                    case SDL_EVENT_QUIT: 
+                        return;
+
+                    case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                     {
-                      case SDL_SENSOR_GYRO:
-                        callback = gyro_callback.load  (std::memory_order_acquire);
-                        break;
-                      case SDL_SENSOR_ACCEL:
-                        callback = accel_callback.load (std::memory_order_acquire);
-                        break;
-                    }
-                    if(callback)
-                    {  
-                        auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gsensor.which);
-                        if(iterator != controller_ids.end())
+                        ControllerSensorCallback callback;
+                        switch (event.gsensor.sensor) 
                         {
-                            callback(static_cast<int>(std::distance(controller_ids.begin(), iterator)), 
-                                     event.gsensor.data[0], 
-                                     event.gsensor.data[1], 
-                                     event.gsensor.data[2]);
+                            case SDL_SENSOR_GYRO:
+                                callback = gyro_callback.load  (std::memory_order_acquire);
+                                break;
+                            case SDL_SENSOR_ACCEL:
+                                callback = accel_callback.load (std::memory_order_acquire);
+                                break;
                         }
+                        
+                        if(callback)
+                        {  
+                            auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gsensor.which);
+                            if(iterator != controller_ids.end())
+                            {
+                                callback(static_cast<int>(std::distance(controller_ids.begin(), iterator)), 
+                                         event.gsensor.data[0], 
+                                         event.gsensor.data[1], 
+                                         event.gsensor.data[2]);
+                            } 
+                        }
+                        break;
+                    }   
 
-                    }
-                    break;
-                  }
-
-                  case SDL_EVENT_GAMEPAD_REMOVED:
-                  {
-                    std::lock_guard<std::mutex> guard(controller_mutex);
-
-                    auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gdevice.which);
-                    // If this condition is not met then it most likely an invalid gamepad being removed so it doesn't affect our structure
-                    if(iterator != controller_ids.end() && *iterator == event.gdevice.which)
+                    case SDL_EVENT_GAMEPAD_REMOVED:
                     {
-                        controller_ids.erase(iterator);
-                        SDL_CloseGamepad(SDL_GetGamepadFromID(event.gdevice.which));
+                        std::lock_guard<std::mutex> guard(controller_mutex);  
+                        auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gdevice.which);
+                        // If this condition is not met then it most likely an invalid gamepad being removed so it doesn't affect our structure
+                        if(iterator != controller_ids.end() && *iterator == event.gdevice.which)
+                        {
+                            controller_ids.erase(iterator);
+                            SDL_CloseGamepad(SDL_GetGamepadFromID(event.gdevice.which));
+                        }
+                        break;
+                    }   
+
+                    case SDL_EVENT_GAMEPAD_ADDED:
+                    {
+                        std::lock_guard<std::mutex> guard(controller_mutex);  
+                        add_gamepad(event.gdevice.which);
+                        break;
                     }
-                    break;
-                  }
-
-                  case SDL_EVENT_GAMEPAD_ADDED:
-                  {
-                    std::lock_guard<std::mutex> guard(controller_mutex);
-
-                    add_gamepad(event.gdevice.which);
-                    break;
-                  }
+                    
                 }
             }
             while (SDL_PollEvent(&event));
@@ -163,7 +165,12 @@ bool set_controller_imu_state (int controller_index, bool is_enabled)
 
 void stop_sdl_loop() 
 {
-    imuReader::running.store(false, std::memory_order_relaxed);   
+    imuReader::running.store(false, std::memory_order_release);   
+
+    SDL_Event quit_event;
+    quit_event.type = SDL_EVENT_QUIT;
+    SDL_PushEvent(&quit_event);
+
     if (imuReader::sdl_thread.joinable())
     {
         imuReader::sdl_thread.join();  
