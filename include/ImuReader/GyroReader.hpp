@@ -21,16 +21,12 @@ extern "C" {
 #endif
     
     typedef void(SENSOR_CALL_CONV *ControllerSensorCallback)(int controllerIndex, float x, float y, float z);
-
-    IMU_API void change_polling_rate          (float polling_rate);
     
     IMU_API void register_gyro_callback       (ControllerSensorCallback callback);
     
     IMU_API void register_accel_callback      (ControllerSensorCallback callback);
         
     IMU_API bool set_controller_imu_state     (int controller_index, bool is_enabled);
-
-    IMU_API void start_variable_rate_sdl_loop ();
 
     IMU_API void start_sdl_loop    ();
  

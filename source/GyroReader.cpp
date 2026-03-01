@@ -9,6 +9,7 @@
 #include <chrono>
 #include <mutex>
 #include <cstdint>
+#include <iostream>
 
 namespace imuReader
 {
@@ -21,6 +22,8 @@ namespace imuReader
     static std::mutex         controller_mutex;
     static std::atomic<bool>  running          (false);
     static std::atomic<float> poll_delay_ms    (1.f);
+
+    // Optional callback to process individual IMU readings as they come
     static std::atomic<ControllerSensorCallback>  gyro_callback    {nullptr}, 
                                                   accel_callback   {nullptr};
 
@@ -75,6 +78,7 @@ namespace imuReader
                             auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gsensor.which);
                             if(iterator != controller_ids.end())
                             {
+                                std::cout << "SDL Time:" << event.gsensor.sensor_timestamp << " ";
                                 callback(static_cast<int>(std::distance(controller_ids.begin(), iterator)), 
                                          event.gsensor.data[0], 
                                          event.gsensor.data[1], 
@@ -108,28 +112,6 @@ namespace imuReader
             }
             while (SDL_PollEvent(&event));
         }
-    }
-
-    template<bool AllowDelay>
-    void sdl_loop_logic()
-    {
-        stop_sdl_loop();
-            
-        controller_ids.clear();
-        running.store(true, std::memory_order_relaxed);   
-
-        sdl_thread = std::thread([]() 
-        {
-            SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_SENSOR); 
-            while (running.load(std::memory_order_relaxed)) 
-            {
-                run_sdl_loop();
-                if constexpr(AllowDelay)
-                    std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(poll_delay_ms.load(std::memory_order_acquire)));                             
-            } 
-
-            SDL_Quit();
-        });
     }
 } 
 
@@ -177,15 +159,23 @@ void stop_sdl_loop()
     }  
 }
 
-void start_variable_rate_sdl_loop()
-{
-    imuReader::sdl_loop_logic<true>();
-   
-}
-
 void start_sdl_loop()
 {
-    imuReader::sdl_loop_logic<false>();
+    stop_sdl_loop();
+
+    imuReader::controller_ids.clear();
+    imuReader::running.store(true, std::memory_order_relaxed);   
+
+    imuReader::sdl_thread = std::thread([]() 
+    {
+        SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_SENSOR); 
+        while (imuReader::running.load(std::memory_order_relaxed)) 
+        {
+            imuReader::run_sdl_loop();                           
+        } 
+
+        SDL_Quit();
+    });
 }  
 
 int return_number_two()

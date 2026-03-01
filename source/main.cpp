@@ -15,10 +15,9 @@ void notify_accel(int controller, float x, float y, float z)
 }
 void test_gyro()
 {
-    start_variable_rate_sdl_loop ();
+    start_sdl_loop ();
     register_gyro_callback       (&notify_gyro);
     register_accel_callback      (&notify_accel);
-    change_polling_rate          (5.f);
 
     
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
