@@ -15,7 +15,7 @@ if(NOT SDL3_FOUND)
     FetchContent_Declare(
         SDL3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG  a962f40bbba175e9716557a25d5d7965f134a3d3
+        GIT_TAG  683181b47cfabd293e3ea409f838915b8297a4fd
     )
     
     set(SDL_SHARED ON CACHE BOOL "" FORCE)
