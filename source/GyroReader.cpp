@@ -1,7 +1,6 @@
-#include <ImuReader/GyroReader.hpp>
-#include "ImuReader/IMUCircularBuffer.hpp"
+#include "ImuReader/GyroReader.hpp"
+#include "ImuReader/IMUController.hpp"
 
-#include <SDL3/SDL.h>
 #include <vector>
 #include <algorithm>
 #include <unordered_set>
@@ -11,12 +10,13 @@
 #include <mutex>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 
 
 namespace imuReader
 {
 
-    //static IMUCircularBuffer imuBuffers[IMUType.];
+    static IMUCircularBuffer imuBuffers[IMUType::Count];
 
     static std::unordered_set<uint16_t> ignored_vendor_ids = 
     {
@@ -33,7 +33,7 @@ namespace imuReader
                                                   accel_callback   {nullptr};
 
     // Might change this to a direct index look up structure with 2 arrays to optimize finding the ids
-    static std::vector<SDL_JoystickID>            controller_ids;
+    static std::vector<std::unique_ptr<IMUController>>            controllers;
     
     void add_gamepad(SDL_JoystickID id)
     {
@@ -44,7 +44,7 @@ namespace imuReader
         SDL_Gamepad *gamepad_id = SDL_OpenGamepad(id);
         if(!gamepad_id) return; 
 
-        controller_ids.push_back(SDL_GetGamepadID(gamepad_id)); 
+        controllers.push_back(std::make_unique<IMUController>(SDL_GetGamepadID(gamepad_id))); 
 
         if (SDL_GamepadHasSensor(gamepad_id, SDL_SENSOR_ACCEL) && SDL_GamepadHasSensor(gamepad_id, SDL_SENSOR_GYRO)) 
         {
@@ -80,11 +80,16 @@ namespace imuReader
                         
                         if(callback)
                         {  
-                            auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gsensor.which);
-                            if(iterator != controller_ids.end())
+                            auto iterator = std::lower_bound(
+                                controllers.begin(), 
+                                controllers.end(), 
+                                event.gsensor.which,
+                                [](const std::unique_ptr<IMUController>& ptr, SDL_JoystickID id) { return ptr->id < id; });
+
+                            if(iterator != controllers.end())
                             {
                                 std::cout << "SDL Time:" << event.gsensor.sensor_timestamp << " ";
-                                callback(static_cast<int>(std::distance(controller_ids.begin(), iterator)), 
+                                callback(static_cast<int>(std::distance(controllers.begin(), iterator)), 
                                          event.gsensor.data[0], 
                                          event.gsensor.data[1], 
                                          event.gsensor.data[2]);
@@ -96,11 +101,16 @@ namespace imuReader
                     case SDL_EVENT_GAMEPAD_REMOVED:
                     {
                         std::lock_guard<std::mutex> guard(controller_mutex);  
-                        auto iterator = std::lower_bound(controller_ids.begin(), controller_ids.end(), event.gdevice.which);
+                        auto iterator = std::lower_bound(
+                            controllers.begin(), 
+                            controllers.end(), 
+                            event.gdevice.which, 
+                            [](const std::unique_ptr<IMUController>& ptr, SDL_JoystickID id) { return ptr->id < id; });
+                            
                         // If this condition is not met then it most likely an invalid gamepad being removed so it doesn't affect our structure
-                        if(iterator != controller_ids.end() && *iterator == event.gdevice.which)
+                        if(iterator != controllers.end() && iterator->get()->id == event.gdevice.which)
                         {
-                            controller_ids.erase(iterator);
+                            controllers.erase(iterator);
                             SDL_CloseGamepad(SDL_GetGamepadFromID(event.gdevice.which));
                         }
                         break;
@@ -141,7 +151,7 @@ bool set_controller_imu_state (int controller_index, bool is_enabled)
 {
     std::lock_guard<std::mutex> guard(imuReader::controller_mutex);
 
-    auto gamepad_id = SDL_GetGamepadFromID(imuReader::controller_ids[controller_index]);
+    auto gamepad_id = SDL_GetGamepadFromID(imuReader::controllers[controller_index].get()->id);
 
     return gamepad_id && 
            SDL_GamepadHasSensor        (gamepad_id, SDL_SENSOR_GYRO ) &&  
@@ -168,7 +178,7 @@ void start_sdl_loop()
 {
     stop_sdl_loop();
 
-    imuReader::controller_ids.clear();
+    imuReader::controllers.clear();
     imuReader::running.store(true, std::memory_order_relaxed);   
 
     imuReader::sdl_thread = std::thread([]() 
@@ -186,6 +196,23 @@ void start_sdl_loop()
 int return_number_two()
 {
     return 2;
+}
+
+const imuReader::IMUSample* return_imu_samples(int controller_index, imuReader::IMUType type)
+{
+   return imuReader::controllers[controller_index].get()->imuBuffers[type].get_data();
+}
+const uint32_t return_samples_head(int controller_index, imuReader::IMUType type)
+{
+    return imuReader::controllers[controller_index].get()->imuBuffers[type].get_head();
+}
+const uint32_t return_samples_tail(int controller_index, imuReader::IMUType type)
+{
+    return imuReader::controllers[controller_index].get()->imuBuffers[type].get_tail();
+}
+const uint32_t return_samples_capacity(int controller_index, imuReader::IMUType type)
+{
+    return imuReader::IMUCircularBuffer::IMU_CAPACITY;
 }
 
 #pragma endregion

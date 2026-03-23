@@ -1,4 +1,7 @@
 #pragma once
+#include "ImuReader/IMUCircularBuffer.hpp"
+
+#include <cstdint>
 
 #if defined(_WIN32)
     #define SENSOR_CALL_CONV __cdecl
@@ -27,6 +30,14 @@ extern "C" {
     IMU_API void register_accel_callback      (ControllerSensorCallback callback);
         
     IMU_API bool set_controller_imu_state     (int controller_index, bool is_enabled);
+
+    IMU_API const imuReader::IMUSample* return_imu_samples (int controller_index, imuReader::IMUType type);
+
+    IMU_API const uint32_t return_samples_head             (int controller_index, imuReader::IMUType type);
+
+    IMU_API const uint32_t return_samples_tail             (int controller_index, imuReader::IMUType type);
+    
+    IMU_API const uint32_t return_samples_capacity         (int controller_index, imuReader::IMUType type);
 
     IMU_API void start_sdl_loop    ();
  

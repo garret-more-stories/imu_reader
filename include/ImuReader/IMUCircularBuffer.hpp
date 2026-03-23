@@ -14,11 +14,15 @@ namespace imuReader
     
     public:
 
-        IMUCircularBuffer(uint32_t buffer_capacity) : capacity(buffer_capacity)
+        // A capacity for the maximum expected number of IMU values per check
+        static const uint32_t IMU_CAPACITY = 256;
+
+        IMUCircularBuffer() : capacity(IMU_CAPACITY)
         {
-            assert(("", (capacity & (capacity - 1)) == 0));
+
         }
-        void Push(const IMUSample& value)
+
+        void push(const IMUSample& value)
         {
             uint32_t last_head = head.value.load(std::memory_order_relaxed);
             uint32_t next      = (last_head + 1) & (capacity - 1);
@@ -39,11 +43,10 @@ namespace imuReader
             head.value.store(next, std::memory_order_release);
         }
     
-        uint32_t GetTail()     const { return tail.value.load(std::memory_order_acquire); }
-        uint32_t GetHead()     const { return head.value.load(std::memory_order_acquire); }
-        uint32_t GetCapacity() const { return capacity; }
+        uint32_t get_tail()     const { return tail.value.load(std::memory_order_acquire); }
+        uint32_t get_head()     const { return head.value.load(std::memory_order_acquire); }
 
-        const IMUSample* GetData()     const { return data; }
+        const IMUSample* get_data()     const { return data; }
     
     private:
         struct alignas(64) PaddedAtomic
@@ -55,6 +58,6 @@ namespace imuReader
         PaddedAtomic tail{0};
         uint32_t     cached_tail {0};
         uint32_t     capacity;
-        alignas(64) IMUSample* data;
+        alignas(64) IMUSample data [IMU_CAPACITY];
     };
 }
