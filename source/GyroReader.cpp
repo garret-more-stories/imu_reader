@@ -68,33 +68,51 @@ namespace imuReader
                     case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                     {
                         ControllerSensorCallback callback;
+                        IMUType imu_type;
+
+                        auto iterator = std::lower_bound(
+                        controllers.begin(), 
+                        controllers.end(), 
+                        event.gsensor.which,
+                        [](const std::unique_ptr<IMUController>& ptr, SDL_JoystickID id) { return ptr->id < id; });
+
+                        
+
                         switch (event.gsensor.sensor) 
                         {
                             case SDL_SENSOR_GYRO:
                                 callback = gyro_callback.load  (std::memory_order_acquire);
+                                imu_type = IMUType::Gyroscope;
                                 break;
                             case SDL_SENSOR_ACCEL:
                                 callback = accel_callback.load (std::memory_order_acquire);
+                                imu_type = IMUType::Gyroscope;
                                 break;
                         }
                         
-                        if(callback)
-                        {  
-                            auto iterator = std::lower_bound(
-                                controllers.begin(), 
-                                controllers.end(), 
-                                event.gsensor.which,
-                                [](const std::unique_ptr<IMUController>& ptr, SDL_JoystickID id) { return ptr->id < id; });
+                        if(iterator != controllers.end())
+                        {
+                            auto index = static_cast<int>(std::distance(controllers.begin(), iterator));
 
-                            if(iterator != controllers.end())
-                            {
+                           controllers[index]->imuBuffers[imu_type].
+                            push(IMUSample( event.gsensor.data[0], 
+                                            event.gsensor.data[1], 
+                                            event.gsensor.data[2], 
+                                            event.gsensor.sensor_timestamp)); 
+
+                            if(callback)
+                            {  
+
                                 std::cout << "SDL Time:" << event.gsensor.sensor_timestamp << " ";
-                                callback(static_cast<int>(std::distance(controllers.begin(), iterator)), 
+                                callback(index, 
                                          event.gsensor.data[0], 
                                          event.gsensor.data[1], 
                                          event.gsensor.data[2]);
-                            } 
+                                 
+                            }
                         }
+
+                        
                         break;
                     }   
 
@@ -106,7 +124,7 @@ namespace imuReader
                             controllers.end(), 
                             event.gdevice.which, 
                             [](const std::unique_ptr<IMUController>& ptr, SDL_JoystickID id) { return ptr->id < id; });
-                            
+
                         // If this condition is not met then it most likely an invalid gamepad being removed so it doesn't affect our structure
                         if(iterator != controllers.end() && iterator->get()->id == event.gdevice.which)
                         {

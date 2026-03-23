@@ -5,7 +5,8 @@ namespace imuReader
     #pragma pack(push, 1)
     struct IMUSample
     {
-
+        IMUSample() : data(0,0,0), timestamp(0) {}
+        IMUSample(float x, float y, float z, uint64_t nanosecond_timestamp) : data(x, y, z), timestamp(nanosecond_timestamp) {}
         float data[3];
         uint64_t timestamp;
 
