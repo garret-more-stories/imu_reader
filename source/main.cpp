@@ -20,9 +20,9 @@ void test_gyro()
     register_accel_callback      (&notify_accel);
 
     
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    /* std::this_thread::sleep_for(std::chrono::milliseconds(500));
     auto disabled = set_controller_imu_state(0, false);
-    std::cout << disabled << "\n";
+    std::cout << disabled << "\n"; */
     while (true) 
     {   
     }

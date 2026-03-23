@@ -1,4 +1,5 @@
 #include <ImuReader/GyroReader.hpp>
+#include "ImuReader/IMUCircularBuffer.hpp"
 
 #include <SDL3/SDL.h>
 #include <vector>
@@ -11,8 +12,12 @@
 #include <cstdint>
 #include <iostream>
 
+
 namespace imuReader
 {
+
+    //static IMUCircularBuffer imuBuffers[IMUType.];
+
     static std::unordered_set<uint16_t> ignored_vendor_ids = 
     {
         0x28DE // Steam Deck
@@ -43,8 +48,8 @@ namespace imuReader
 
         if (SDL_GamepadHasSensor(gamepad_id, SDL_SENSOR_ACCEL) && SDL_GamepadHasSensor(gamepad_id, SDL_SENSOR_GYRO)) 
         {
-            bool sensorState = SDL_SetGamepadSensorEnabled(gamepad_id, SDL_SENSOR_GYRO , true);
-            bool accelState  = SDL_SetGamepadSensorEnabled(gamepad_id, SDL_SENSOR_ACCEL, true);
+            bool sensor_state = SDL_SetGamepadSensorEnabled(gamepad_id, SDL_SENSOR_GYRO , true);
+            bool accel_state  = SDL_SetGamepadSensorEnabled(gamepad_id, SDL_SENSOR_ACCEL, true);
         }
     }
 
