@@ -86,7 +86,7 @@ namespace imuReader
                                 break;
                             case SDL_SENSOR_ACCEL:
                                 callback = accel_callback.load (std::memory_order_acquire);
-                                imu_type = IMUType::Gyroscope;
+                                imu_type = IMUType::Accelerometer;
                                 break;
                         }
                         
