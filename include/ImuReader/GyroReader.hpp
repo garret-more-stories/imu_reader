@@ -39,6 +39,8 @@ extern "C" {
     
     IMU_API const uint32_t return_samples_capacity         (int controller_index, imuReader::IMUType type);
 
+    IMU_API void update_samples_tail                       (int controller_index, imuReader::IMUType type, uint32_t new_tail);
+
     IMU_API void start_sdl_loop    ();
  
     IMU_API void stop_sdl_loop     ();

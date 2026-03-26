@@ -233,5 +233,10 @@ const uint32_t return_samples_capacity(int controller_index, imuReader::IMUType 
     return imuReader::IMUCircularBuffer::IMU_CAPACITY;
 }
 
+void update_samples_tail(int controller_index, imuReader::IMUType type, uint32_t new_tail)
+{
+    imuReader::controllers[controller_index].get()->imuBuffers[type].update_tail(new_tail);
+}
+
 #pragma endregion
  

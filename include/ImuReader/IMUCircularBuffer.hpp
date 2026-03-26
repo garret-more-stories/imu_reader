@@ -27,16 +27,9 @@ namespace imuReader
             uint32_t last_head = head.value.load(std::memory_order_relaxed);
             uint32_t next      = (last_head + 1) & (capacity - 1);
             
-            if(next ==  cached_tail && 
-               next == (cached_tail = tail.value.load(std::memory_order_acquire))) 
+            if(next == tail.value.load(std::memory_order_acquire))
             {
-                tail.value.store(cached_tail = (cached_tail + 1) & (capacity - 1), std::memory_order_release);
-            }
-    
-            if (next == tail.value.load(std::memory_order_acquire))
-            {
-                tail.value.store((tail.value.load(std::memory_order_relaxed) + 1) & (capacity - 1),
-                           std::memory_order_release);
+                tail.value.store((tail.value.load(std::memory_order_acquire)+ 1) & (capacity - 1), std::memory_order_release);
             }
     
             data[last_head] = value;
@@ -45,6 +38,11 @@ namespace imuReader
     
         uint32_t get_tail()     const { return tail.value.load(std::memory_order_acquire); }
         uint32_t get_head()     const { return head.value.load(std::memory_order_acquire); }
+
+        void update_tail(uint32_t new_tail) 
+        {
+            tail.value.store(new_tail, std::memory_order_release);
+        }
 
         const IMUSample* get_data()     const { return data; }
     
@@ -56,7 +54,7 @@ namespace imuReader
 
         PaddedAtomic head{0};
         PaddedAtomic tail{0};
-        uint32_t     cached_tail {0};
+        //uint32_t     cached_tail {0};
         uint32_t     capacity;
         alignas(64) IMUSample data [IMU_CAPACITY];
     };
