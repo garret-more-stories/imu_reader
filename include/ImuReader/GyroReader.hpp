@@ -23,7 +23,7 @@
 extern "C" {
 #endif
     
-    typedef void(SENSOR_CALL_CONV *ControllerSensorCallback)(int controllerIndex, float x, float y, float z);
+    typedef void(SENSOR_CALL_CONV *ControllerSensorCallback)(int controllerIndex, float x, float y, float z, uint64_t timestamp);
     
     IMU_API void register_gyro_callback       (ControllerSensorCallback callback);
     

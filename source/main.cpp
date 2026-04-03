@@ -4,13 +4,15 @@
 #include <thread>
 #include <chrono>
 
-void notify_gyro(int controller, float x, float y, float z)
+void notify_gyro(int controller, float x, float y, float z, uint64_t timestamp)
 {
+    std::cout << "SDL Time:" << timestamp << " ";
     printf("Gyro  from controller %i: %f, %f, %f\n",controller, x, y, z);
 }
 
-void notify_accel(int controller, float x, float y, float z)
+void notify_accel(int controller, float x, float y, float z, uint64_t timestamp)
 {
+    std::cout << "SDL Time:" << timestamp << " ";
     printf("Accel from controller %i: %f, %f, %f\n",controller, x, y, z);
 }
 void test_gyro()

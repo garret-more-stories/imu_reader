@@ -102,12 +102,11 @@ namespace imuReader
 
                             if(callback)
                             {  
-
-                                std::cout << "SDL Time:" << event.gsensor.sensor_timestamp << " ";
                                 callback(index, 
                                          event.gsensor.data[0], 
                                          event.gsensor.data[1], 
-                                         event.gsensor.data[2]);
+                                         event.gsensor.data[2],
+                                         event.gsensor.sensor_timestamp);
                                  
                             }
                         }
